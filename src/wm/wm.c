@@ -776,11 +776,12 @@ static bool thumb_cache_is_failed(const char *path);
 static uint32_t* thumb_cache_lookup(const char *path);
 static uint32_t* thumb_cache_decode(const char *path);
 
-#define DOCK_ITEM_SIZE 48
-#define DOCK_ITEM_SPACING 10
-#define DOCK_HEIGHT 60
-#define DOCK_VERTICAL_MARGIN 6
-#define DOCK_BG_PADDING 12
+#define DOCK_ITEM_SIZE (get_screen_height() <= 768 ? 32 : 48)
+#define DOCK_ITEM_SPACING (get_screen_height() <= 768 ? 6 : 10)
+#define DOCK_HEIGHT (get_screen_height() <= 768 ? 44 : 60)
+#define DOCK_VERTICAL_MARGIN (get_screen_height() <= 768 ? 4 : 6)
+#define DOCK_BG_PADDING (get_screen_height() <= 768 ? 8 : 12)
+#define TOP_BAR_HEIGHT (get_screen_height() <= 768 ? 24 : 30)
 #define DOCK_ICON_COUNT 12
 #define DOCK_ICON_SIZE 48
 #define DOCK_ICON_PIXELS (DOCK_ICON_SIZE * DOCK_ICON_SIZE)
@@ -1010,7 +1011,7 @@ bool wm_draw_dock_icon_scaled(int x, int y, int size, int slot_index) {
 }
 
 static void draw_dock_icon_slot_png(int x, int y, int slot_index) {
-    (void)wm_draw_dock_icon_scaled(x, y, DOCK_ICON_SIZE, slot_index);
+    (void)wm_draw_dock_icon_scaled(x, y, DOCK_ITEM_SIZE, slot_index);
 }
 
 static bool draw_icon_path_scaled(int x, int y, int size, const char *path) {
@@ -1089,7 +1090,7 @@ static bool dock_draw_metadata_icon(int x, int y, const dock_item_t *item) {
         return false;
     }
 
-    return draw_icon_path_scaled(x, y, DOCK_ICON_SIZE, icon_path);
+    return draw_icon_path_scaled(x, y, DOCK_ITEM_SIZE, icon_path);
 }
 
 static void dock_copy_text(char *dst, int dst_size, const char *src) {
@@ -2579,10 +2580,10 @@ static void wm_paint_region(int y_start, int y_end, DirtyRect dirty, int pass) {
             draw_window(win);
         }
     } else if (pass == 2) {
-        if (0 < cy + ch && 30 > cy) {
-            draw_rect(0, 0, sw, 30, COLOR_MENUBAR_BG);
-            draw_boredos_logo(8, 4, 1);
-            draw_clock(sw - 80, 12);
+        if (0 < cy + ch && TOP_BAR_HEIGHT > cy) {
+            draw_rect(0, 0, sw, TOP_BAR_HEIGHT, COLOR_MENUBAR_BG);
+            draw_boredos_logo(8, (TOP_BAR_HEIGHT > 24) ? 4 : 2, (TOP_BAR_HEIGHT > 24) ? 1 : -20);
+            draw_clock(sw - 80, (TOP_BAR_HEIGHT > 24) ? 12 : 7);
         }
         
         if (start_menu_open && 40 < cy + ch && 125 > cy) {
@@ -4211,7 +4212,7 @@ void wm_timer_tick(void) {
     if (current_sec != last_second) {
         last_second = current_sec;
         int sw = get_screen_width();
-        wm_mark_dirty(sw - 110, 0, 110, 30);
+        wm_mark_dirty(sw - 110, 0, 110, TOP_BAR_HEIGHT);
     }
     
     if (notif_active) {

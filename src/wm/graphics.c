@@ -756,6 +756,35 @@ void graphics_set_logo_pixels(uint32_t *pixels, int w, int h) {
 
 void draw_boredos_logo(int x, int y, int scale) {
     if (g_logo_pixels) {
+        if (scale < 0) {
+            int target_h = -scale;
+            int target_w = (g_logo_w * target_h) / g_logo_h;
+            if (target_h >= g_logo_h) {
+                target_w = g_logo_w;
+                target_h = g_logo_h;
+            }
+            int src_max_x = g_logo_w - 1;
+            int src_max_y = g_logo_h - 1;
+            for (int ty = 0; ty < target_h; ty++) {
+                int sy = (target_h > 1) ? (ty * src_max_y) / (target_h - 1) : 0;
+                if (sy < 0) sy = 0; if (sy > src_max_y) sy = src_max_y;
+                for (int tx = 0; tx < target_w; tx++) {
+                    int sx = (target_w > 1) ? (tx * src_max_x) / (target_w - 1) : 0;
+                    if (sx < 0) sx = 0; if (sx > src_max_x) sx = src_max_x;
+                    uint32_t pixel = g_logo_pixels[sy * g_logo_w + sx];
+                    uint8_t a = (pixel >> 24) & 0xFF;
+                    if (a == 0) continue;
+                    if (a == 255) {
+                        put_pixel(x + tx, y + ty, pixel);
+                    } else {
+                        uint32_t dst = graphics_get_pixel(x + tx, y + ty);
+                        put_pixel(x + tx, y + ty, blend_src_over_dst(dst, pixel));
+                    }
+                }
+            }
+            return;
+        }
+
         for (int r = 0; r < g_logo_h; r++) {
             for (int c = 0; c < g_logo_w; c++) {
                 uint32_t pixel = g_logo_pixels[r * g_logo_w + c];
